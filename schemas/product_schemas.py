@@ -37,7 +37,7 @@ class ResponseProductDto(BaseModel):
     price: float
     qty: int
     insertedAt: datetime
-    last_qty_changed: datetime
+    last_qty_changed: Optional[datetime] = None
     currency: Currency
 
 class ResponseProductsDto(RootModel[List[ResponseProductDto]]):
