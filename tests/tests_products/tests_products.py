@@ -1,17 +1,21 @@
 from decimal import Decimal
 
+from pydantic import ValidationError
+
 from factories.product_factory import RequestCreateProductDtoFactory
+from helpers.helpers import add_data_to_cleanup, validate_response_json
+from schemas.product_schemas import ResponseProductDto
 
 
 class TestProducts:
     def test_create_product(self, db_intest_data_cleanup, api_products_methods, db_methods):
         data = RequestCreateProductDtoFactory.build().model_dump()  # model_dump() это замена dict(), который deprecated
-        db_intest_data_cleanup.append({"table": "product",
-                                       "attribute": "article",
-                                       "value": data["article"]})
-
+        add_data_to_cleanup(db_intest_data_cleanup, "product", "article", data["article"])
         response = api_products_methods.create_product(data)
         assert response.status_code == 201
+
+        assert validate_response_json(response, ResponseProductDto)
+
         assert db_methods.check_product_exists_by_article(data['article'])
 
         response_data = response.json()
