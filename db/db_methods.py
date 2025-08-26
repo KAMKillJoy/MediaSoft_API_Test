@@ -18,7 +18,12 @@ class DbMethods(PostgresClient):
         return self.fetch_all("SELECT * FROM product WHERE article = %s", (article,))
 
     def delete_ent(self, ent: dict):
-        table = ent['table']
-        attribute = ent['attribute']
-        value = ent['value']
-        self.execute_query(f"DELETE FROM {table} WHERE {attribute} = %s", (value, ))
+        table = ent.get('table')
+        attribute = ent.get('attribute')
+        value = ent.get('value')
+
+        if not table or not attribute or not value:
+            raise ValueError("Invalid data for delete_ent: missing table, attribute, or value")
+
+        query = f"DELETE FROM {table} WHERE {attribute} = %s"
+        self.execute_query(query, (value,))

@@ -34,10 +34,11 @@ def db_methods():
     yield db
     db.close()
 
+
 @pytest.fixture(scope="session")
 def db_intest_data_cleanup(db_methods):
-    intest_data = list()
+    intest_data = []
     yield intest_data
 
-    for i in intest_data:
-        db_methods.delete_ent(i)
+    for entry in intest_data:
+        db_methods.delete_ent(entry)
