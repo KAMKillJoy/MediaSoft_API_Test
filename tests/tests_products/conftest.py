@@ -1,0 +1,1 @@
+from fixtures import api_products_methods
