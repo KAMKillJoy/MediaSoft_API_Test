@@ -1,1 +1,1 @@
-from fixtures import api_products_methods
+from fixtures import db_intest_data_cleanup, api_products_methods, db_methods
