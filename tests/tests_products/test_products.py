@@ -7,7 +7,8 @@ from factories.product_factory import RequestCreateProductDtoFactory
 from helpers.helpers import validate_response_json
 from schemas.product_schemas import ResponseProductDto, ResponseProductsDto, RequestUpdateProductDto
 
-
+@allure.suite("Продукты")
+@allure.feature("API /products")
 class TestProducts:
     @allure.title("Создание нового продукта")
     @allure.description("Проверка успешного создания продукта через API и его наличия в БД")
@@ -59,6 +60,8 @@ class TestProducts:
             )
             assert db_row['qty'] == data['qty'], f"Поле qty в БД: ожидалось {data['qty']}, получено {db_row['qty']}"
 
+    @allure.title("Получение всех продуктов")
+    @allure.description("Проверка соответствия данных из API и БД")
     def test_get_all_products(self, db_intest_data_cleanup, api_products_methods, db_methods, create_n_test_products):
         with allure.step("Отправка запроса всех продуктов"):
             response = api_products_methods.get_products()
@@ -91,6 +94,8 @@ class TestProducts:
                 'price'], f"[{article}] Несовпадение price"
             assert api_product['qty'] == db_product['qty'], f"[{article}] Несовпадение qty"
 
+    @allure.title("Обновление количества продукта")
+    @allure.description("Проверка успешного изменения qty продукта через API")
     def test_patch_product_qty(
             self,
             db_intest_data_cleanup,
@@ -99,8 +104,9 @@ class TestProducts:
             create_n_test_products
     ):
         db_products = db_methods.get_all_products_from_db()
-        product_for_test = random.choice(db_products)
-        product_for_test_id = product_for_test['id']
+        with allure.step("Выбор случайного продукта из базы"):
+            product_for_test = random.choice(db_products)
+            product_for_test_id = product_for_test['id']
         old_qty = product_for_test['qty']
         new_qty = random.randint(1, 100)
         new_data = {"id": product_for_test_id, "qty": new_qty}
@@ -139,6 +145,8 @@ class TestProducts:
                 f"Стало: {patched_db_product.get('last_qty_changed')}"
             )
 
+    @allure.title("Получение продукта по ID")
+    @allure.description("Проверка соответствия данных из API и БД при запросе по ID")
     def test_get_product_by_id(
             self,
             db_intest_data_cleanup,
@@ -147,8 +155,10 @@ class TestProducts:
             create_n_test_products
     ):
         db_products = db_methods.get_all_products_from_db()
-        product_for_test = random.choice(db_products)
-        product_for_test_id = product_for_test['id']
+
+        with allure.step("Выбор случайного продукта из базы"):
+            product_for_test = random.choice(db_products)
+            product_for_test_id = product_for_test['id']
 
         with allure.step("Отправка запроса на получение продукта по ID"):
             response = api_products_methods.get_product(product_for_test_id)
@@ -174,3 +184,28 @@ class TestProducts:
             assert actual_price == expected_price, f"Поле price в БД: ожидалось {expected_price}, получено {actual_price}"
             assert product_for_test['qty'] == resp_data[
                 'qty'], f"Поле qty в БД: ожидалось {resp_data['qty']}, получено {product_for_test['qty']}"
+
+    @allure.title("Удаление продукта по ID")
+    @allure.description("Проверка успешного удаления продукта и отсутствия его в БД")
+    def test_delete_product_by_id(
+            self,
+            db_intest_data_cleanup,
+            api_products_methods,
+            db_methods,
+            create_n_test_products
+    ):
+        db_products = db_methods.get_all_products_from_db()
+        product_for_test = random.choice(db_products)
+        product_for_test_id = product_for_test['id']
+
+        with allure.step("Отправка запроса на удаление продукта по ID"):
+            response = api_products_methods.delete_product(product_for_test_id)
+
+            assert response.status_code == 200, (
+                f"Ожидался статус 200, но получен {response.status_code}. "
+                f"Ответ: {response.text}"
+            )
+
+        with (allure.step("Проверка отсутствия удалённого продукта в базе данных")):
+            assert not db_methods.check_product_exists_by_id(product_for_test_id), \
+            f"Продукт с id {product_for_test_id} найден в БД"
