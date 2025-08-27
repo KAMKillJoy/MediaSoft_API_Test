@@ -3,12 +3,26 @@ from typing import Type
 from pydantic import ValidationError, BaseModel
 
 
-def add_data_to_cleanup(intest_data, table: str, attribute: str, value):
-    intest_data.append({
-        "table": table,
-        "attribute": attribute,
-        "value": value
-    })
+class IntestDataCleaner:
+    def __init__(self):
+        self._data = []
+
+    def add(self, table: str, attribute: str, value):
+        self._data.append({
+            "table": table,
+            "attribute": attribute,
+            "value": value
+        })
+
+    def cleanup(self, db_methods):
+        for entry in self._data:
+            db_methods.delete_ent(entry)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __repr__(self):
+        return f"IntestDataCleaner({self._data})"
 
 def validate_response_json(response, model: Type[BaseModel]) -> bool:
     try:

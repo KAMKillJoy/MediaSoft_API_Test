@@ -1,11 +1,13 @@
 import os
 
+import allure
 import pytest
 import yaml
 from dotenv import load_dotenv
 
 from api.products_api_methods import ProductsMethods
 from db.db_methods import DbMethods
+from helpers.helpers import IntestDataCleaner
 
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
@@ -37,8 +39,8 @@ def db_methods():
 
 @pytest.fixture(scope="session")
 def db_intest_data_cleanup(db_methods):
-    intest_data = []
-    yield intest_data
+    cleaner = IntestDataCleaner()
+    yield cleaner
 
-    for entry in intest_data:
-        db_methods.delete_ent(entry)
+    with allure.step("Очищаем тестовые данные"):
+        cleaner.cleanup(db_methods)
