@@ -30,5 +30,5 @@ class ProductsMethods(ApiClient):
 
     @allure.step("Удаление продукта по ID: {product_id}")
     def delete_product(self, product_id: str) -> Response:
-        response = self.delete(self.products_endpoint + f"/products/{product_id}")
+        response = self.delete(self.products_endpoint +"/"+ product_id)
         return response
