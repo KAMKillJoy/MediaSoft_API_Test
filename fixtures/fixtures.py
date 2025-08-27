@@ -9,7 +9,7 @@ from api.products_api_methods import ProductsMethods
 from db.db_methods import DbMethods
 from helpers.helpers import IntestDataCleaner
 
-with open("config.yaml", "r") as file:
+with open("./config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 
@@ -19,7 +19,7 @@ def api_products_methods():
     return api
 
 
-dotenv_path = '.env'
+dotenv_path = './.env'
 
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
