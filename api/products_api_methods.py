@@ -25,7 +25,7 @@ class ProductsMethods(ApiClient):
 
     @allure.step("Получение продукта по ID: {product_id}")
     def get_product(self, product_id: str) -> Response:
-        response = self.get(self.products_endpoint + f"/products/{product_id}")
+        response = self.get(self.products_endpoint +"/"+ product_id)
         return response
 
     @allure.step("Удаление продукта по ID: {product_id}")
