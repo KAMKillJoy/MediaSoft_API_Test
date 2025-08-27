@@ -18,6 +18,17 @@ class DbMethods(PostgresClient):
             warnings.warn("В таблице больше одной сущности с таким UUID. Так быть не должно", category=UserWarning)
             return True
 
+    @allure.step("Проверка существования продукта с id: {bdid}")
+    def check_product_exists_by_id(self, bdid):
+        db_response = self.get_product_by_id(bdid)
+        if len(db_response) == 0:
+            return False
+        elif len(db_response) == 1:
+            return True
+        else:
+            warnings.warn("В таблице больше одной сущности с таким UUID. Так быть не должно", category=UserWarning)
+            return True
+
     @allure.step("Получение продукта из БД по артикулу: {article}")
     def get_product_by_article(self, article):
         return self.fetch_all("SELECT * FROM product WHERE article = %s", (article,))
