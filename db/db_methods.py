@@ -1,9 +1,13 @@
 import warnings
+from typing import List, Dict
 
 import allure
+from faker import Faker
 
 from db.postgres_client import PostgresClient
-from factories.product_factory import RequestCreateProductDtoFactory
+from factories.factories import RequestCreateProductDtoFactory
+
+fake = Faker()
 
 
 class DbMethods(PostgresClient):
@@ -80,20 +84,33 @@ class DbMethods(PostgresClient):
         self.insert_entity("product", clean_data)
 
     @allure.step("Создание {n} случайных продуктов в таблице product")
-    def create_random_products(self, n: int, cleanup=None) -> list:
+    def create_random_products(
+            self,
+            n: int,
+            cleanup=None,
+            only_available: bool = False
+    ) -> List[dict]:
         """
         Создаёт n случайных продуктов и сохраняет их в БД.
-        Возвращает список созданных продуктов.
+        Возвращает список словарей с данными продуктов.
 
         :param n: количество создаваемых продуктов
-        :param cleanup: опциональный IntestDataCleaner (или аналог),
+        :param cleanup: опциональный очиститель (для удаления тестовых данных);
                         в который будут добавлены продукты на удаление
+        :param only_available: если True — все продукты создаются как доступные (is_available=True);
+                               если False — доступность задаётся случайным булевым значением.
+        :return: список словарей с данными продуктов, включая поле is_available (bool)
         """
         created_products = []
 
         for _ in range(n):
             product = RequestCreateProductDtoFactory.build()
             product_data = product.model_dump()
+
+            if only_available:
+                product_data["is_available"] = True
+            else:
+                product_data["is_available"] = fake.pybool()
 
             self.insert_product(product_data)
             created_products.append(product_data)
@@ -107,3 +124,116 @@ class DbMethods(PostgresClient):
 
         return created_products
 
+    @allure.step("Добавление клиента: {user_data}")
+    def insert_customer(self, user_data: dict) -> None:
+        """
+        Добавляет клиента в таблицу customer.
+        Ключи: login, email, is_active (bool)
+        """
+        allowed_fields = {"login", "email", "is_active"}
+        clean_data = {k: v for k, v in user_data.items() if k in allowed_fields}
+        self.insert_entity("customer", clean_data)
+
+    @allure.step("Создание {n} случайных клиентов")
+    def create_random_customers(self, n: int, cleanup=None, all_active: bool = False) -> List[dict]:
+        """
+        Создаёт n случайных клиентов и сохраняет их в БД.
+
+        :param n: количество создаваемых клиентов.
+        :param cleanup: опциональный очиститель (для удаления тестовых данных); очищаем по 'login'.
+        :param all_active: если True, все клиенты помечаются как активные (is_active=True);
+                           если False, 'is_active' задаётся случайным булевым значением.
+        :return: список словарей с данными клиентов (ключи: login, email, is_active).
+        """
+        created = []
+        for _ in range(n):
+            user_data = {
+                "login": fake.user_name(),
+                "email": fake.email(),
+            }
+            if all_active:
+                user_data["is_active"] = True
+            else:
+                user_data["is_active"] = fake.boolean()
+
+            self.insert_customer(user_data)
+            created.append(user_data)
+
+            if cleanup:
+                cleanup.add(table="customer", attribute="login", value=user_data["login"])
+        return created
+
+    def get_customer_by_loginnemail(self, login, email):
+        sql = """
+        SELECT *
+        FROM customer
+        WHERE login = %s AND email = %s
+        LIMIT 1
+        """
+        params = (login, email)
+
+        return self.fetch_all(sql, params)
+
+    def get_order_by_customer_id_n_address(self, customer_id, address):
+        sql = """
+        SELECT *
+        FROM "order"
+        WHERE customer_id = %s AND address = %s
+        LIMIT 1
+        """
+        params = (customer_id, address)
+
+        return self.fetch_all(sql, params)
+
+    def create_order(self, customer_id, delivery_address):
+        sql = """
+                INSERT INTO "order" (customer_id, status, delivery_address)
+                VALUES (%s, %s, %s);
+                """
+        params = (customer_id, "CREATED", delivery_address)
+
+        self.execute_query(sql, params)
+
+    def create_ordered_product(self, order_id, product_id, qty, price):
+        sql = """
+                INSERT INTO "ordered_product" (order_id, product_id, qty, price)
+                VALUES (%s, %s, %s, %s);
+                """
+        params = (order_id, product_id, qty, price)
+
+        self.execute_query(sql, params)
+
+    def get_ordered_product_by_all_rows(self, order_id, product_id, product_qty, product_price):
+        sql = """
+                SELECT *
+                FROM ordered_product
+                WHERE order_id = %s AND product_id = %s AND product_qty = %s AND product_price = %s
+                LIMIT 1
+                """
+        params = (order_id, product_id, product_qty, product_price)
+
+        return self.fetch_all(sql, params)
+
+
+    def create_test_order(self, cleanup=None) -> dict:
+        customer = self.create_random_customers(1, cleanup=cleanup, all_active=True)[0]
+        customer_from_db = self.get_customer_by_loginnemail(customer["login"], customer["email"])[0]
+        customer_id = customer_from_db["id"]
+
+        product = self.create_random_products(1, cleanup=cleanup, only_available=True)[0]
+        product_from_db = self.get_product_by_article(product["article"])[0]
+        product_id = product_from_db["id"]
+        product_qty = product_from_db["qty"]
+        product_price = product_from_db["price"]
+
+        order_address = fake.address()
+        self.create_order(customer_id, order_address)
+        order_from_db = self.get_order_by_customer_id_n_address(customer_id, order_address)[0]
+        order_id = order_from_db["id"]
+
+        self.create_ordered_product(order_id, product_id, product_qty, product_price)
+        ordered_product_from_db = self.get_ordered_product_by_all_rows(order_id, product_id, product_qty, product_price)
+        return {"customer" : customer_from_db,
+                "product": product_from_db,
+                "order": order_from_db,
+                "ordered_product": ordered_product_from_db}

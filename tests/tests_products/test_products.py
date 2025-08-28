@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import allure
 
-from factories.product_factory import RequestCreateProductDtoFactory
+from factories.factories import RequestCreateProductDtoFactory
 from helpers.helpers import validate_response_json
 from schemas.product_schemas import ResponseProductDto, ResponseProductsDto, RequestUpdateProductDto
 

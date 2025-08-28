@@ -47,5 +47,5 @@ def db_intest_data_cleanup(db_methods):
 
 @pytest.fixture(scope="function")
 def create_n_test_products(db_methods, db_intest_data_cleanup):
-    created = db_methods.create_random_products(n=50, cleanup=db_intest_data_cleanup)
+    created = db_methods.create_random_products(n=50, cleanup=db_intest_data_cleanup, only_available=True)
     return created

@@ -1,10 +1,10 @@
 import uuid
 from enum import Enum
 from random import choice
-from uuid import uuid4
 
 from polyfactory.factories.pydantic_factory import ModelFactory
 
+from schemas.order_schemas import RequestCreateOrderDto
 from schemas.product_schemas import RequestCreateProductDto
 
 
@@ -14,6 +14,7 @@ class CategoryEnum(str, Enum):
 
 
 class RequestCreateProductDtoFactory(ModelFactory):
+    __check_model__ = False
     __model__ = RequestCreateProductDto
 
     @classmethod
@@ -23,3 +24,8 @@ class RequestCreateProductDtoFactory(ModelFactory):
     @classmethod
     def category(cls):
         return choice([CategoryEnum.VEGETABLES, CategoryEnum.FRUITS])
+
+
+class RequestCreateOrderDtoFactory(ModelFactory):
+    __check_model__ = False
+    __model__ = RequestCreateOrderDto
