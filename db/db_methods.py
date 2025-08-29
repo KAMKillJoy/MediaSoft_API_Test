@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Dict
+from typing import List
 
 import allure
 from faker import Faker
@@ -147,9 +147,11 @@ class DbMethods(PostgresClient):
         """
         created = []
         for _ in range(n):
+            login = fake.user_name()[-20:]
+            email = fake.email()[-20:]
             user_data = {
-                "login": fake.user_name(),
-                "email": fake.email(),
+                "login": login,
+                "email": email,
             }
             if all_active:
                 user_data["is_active"] = True
@@ -163,6 +165,7 @@ class DbMethods(PostgresClient):
                 cleanup.add(table="customer", attribute="login", value=user_data["login"])
         return created
 
+    @allure.step("Получение клиента по login/email: {login}, {email}")
     def get_customer_by_loginnemail(self, login, email):
         sql = """
         SELECT *
@@ -174,17 +177,19 @@ class DbMethods(PostgresClient):
 
         return self.fetch_all(sql, params)
 
+    @allure.step("Получение заказа по customer_id: {customer_id} и адресу: {address}")
     def get_order_by_customer_id_n_address(self, customer_id, address):
         sql = """
         SELECT *
         FROM "order"
-        WHERE customer_id = %s AND address = %s
+        WHERE customer_id = %s AND delivery_address = %s
         LIMIT 1
         """
         params = (customer_id, address)
 
         return self.fetch_all(sql, params)
 
+    @allure.step("Создание заказа для customer_id: {customer_id}")
     def create_order(self, customer_id, delivery_address):
         sql = """
                 INSERT INTO "order" (customer_id, status, delivery_address)
@@ -194,6 +199,7 @@ class DbMethods(PostgresClient):
 
         self.execute_query(sql, params)
 
+    @allure.step("Создание записи в ordered_product (order_id: {order_id}, product_id: {product_id})")
     def create_ordered_product(self, order_id, product_id, qty, price):
         sql = """
                 INSERT INTO "ordered_product" (order_id, product_id, qty, price)
@@ -203,24 +209,52 @@ class DbMethods(PostgresClient):
 
         self.execute_query(sql, params)
 
+    @allure.step("Получение записи из ordered_product (order_id: {order_id}, product_id: {product_id})")
     def get_ordered_product_by_all_rows(self, order_id, product_id, product_qty, product_price):
         sql = """
                 SELECT *
                 FROM ordered_product
-                WHERE order_id = %s AND product_id = %s AND product_qty = %s AND product_price = %s
+                WHERE order_id = %s AND product_id = %s AND qty = %s AND price = %s
                 LIMIT 1
                 """
         params = (order_id, product_id, product_qty, product_price)
 
         return self.fetch_all(sql, params)
 
-
+    @allure.step("Создание полного тестового заказа")
     def create_test_order(self, cleanup=None) -> dict:
-        customer = self.create_random_customers(1, cleanup=cleanup, all_active=True)[0]
+        """
+        Создаёт полный тестовый заказ в базе данных, включая:
+        - клиента (customer)
+        - продукт (product)
+        - заказ (order)
+        - заказанный продукт (ordered_product)
+
+        Все сущности создаются с валидными связями между собой,
+        что позволяет использовать их для интеграционных тестов.
+
+
+        :param cleanup: объект IntestDataCleaner (опционально).
+                        Если передан — добавляет созданные сущности
+                        в него для последующей автоматической очистки.
+                        Порядок добавления **обратный** (product → customer → order → ordered_product),
+                        так как в методе очистки данные инвертируются для безопасного удаления
+                        с учётом внешних ключей.
+
+        :return: словарь с созданными сущностями:
+                 {
+                    "customer": dict,
+                    "product": dict,
+                    "order": dict,
+                    "ordered_product": dict
+                 }
+        """
+
+        customer = self.create_random_customers(1, all_active=True)[0]
         customer_from_db = self.get_customer_by_loginnemail(customer["login"], customer["email"])[0]
         customer_id = customer_from_db["id"]
 
-        product = self.create_random_products(1, cleanup=cleanup, only_available=True)[0]
+        product = self.create_random_products(1, only_available=True)[0]
         product_from_db = self.get_product_by_article(product["article"])[0]
         product_id = product_from_db["id"]
         product_qty = product_from_db["qty"]
@@ -232,8 +266,21 @@ class DbMethods(PostgresClient):
         order_id = order_from_db["id"]
 
         self.create_ordered_product(order_id, product_id, product_qty, product_price)
-        ordered_product_from_db = self.get_ordered_product_by_all_rows(order_id, product_id, product_qty, product_price)
-        return {"customer" : customer_from_db,
+        ordered_product_from_db = \
+            self.get_ordered_product_by_all_rows(order_id, product_id, product_qty, product_price)[0]
+
+        if cleanup:
+            '''
+            Порядок важен для избегания конфликтов зависимостей в БД!
+            В данном случае порядок обратный, так как метод удаления инвертирует итоговый список, 
+            что необходимо в общем случае.
+            '''
+            cleanup.add(table="product", attribute="id", value=product_id)
+            cleanup.add(table="customer", attribute="id", value=customer_id)
+            cleanup.add(table='\"order\"', attribute="id", value=order_id)
+            cleanup.add(table="ordered_product", attribute="order_id", value=order_id)
+
+        return {"customer": customer_from_db,
                 "product": product_from_db,
                 "order": order_from_db,
                 "ordered_product": ordered_product_from_db}
