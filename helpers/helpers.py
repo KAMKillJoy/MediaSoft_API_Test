@@ -4,6 +4,9 @@ from pydantic import ValidationError, BaseModel
 
 
 class IntestDataCleaner:
+    def __bool__(self):
+        return True
+
     def __init__(self):
         self._data = []
 
@@ -15,7 +18,7 @@ class IntestDataCleaner:
         })
 
     def cleanup(self, db_methods):
-        for entry in self._data:
+        for entry in reversed(self._data):
             db_methods.delete_ent(entry)
 
     def __len__(self):
