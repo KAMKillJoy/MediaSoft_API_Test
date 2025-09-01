@@ -1,9 +1,11 @@
 import logging
+
 import requests
 
 # Настройка логирования
 logger = logging.getLogger("api_client")
 logging.basicConfig(level=logging.INFO)
+
 
 class ApiClient:
     """

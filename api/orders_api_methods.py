@@ -1,5 +1,6 @@
 import allure
 from requests import Response
+
 from api.api_client import ApiClient
 
 
@@ -9,7 +10,7 @@ class OrdersMethods(ApiClient):
         self.orders_endpoint = orders_endpoint
 
     @allure.step("Создание заказа с данными: {data}")
-    def create_order(self,customer_id, data: dict) -> Response:
+    def create_order(self, customer_id, data: dict) -> Response:
         headers = {"customer_id": customer_id}
         response = self.post(self.orders_endpoint, json=data, headers=headers)
         return response

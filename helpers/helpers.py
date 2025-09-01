@@ -27,6 +27,7 @@ class IntestDataCleaner:
     def __repr__(self):
         return f"IntestDataCleaner({self._data})"
 
+
 def validate_response_json(response, model: Type[BaseModel]) -> bool:
     try:
         model.model_validate(response.json())
