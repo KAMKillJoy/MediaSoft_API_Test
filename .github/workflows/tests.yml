@@ -21,6 +21,9 @@ jobs:
       id-token: write
 
     steps:
+      - name: Debug env
+        run: env | grep DB_
+    
       - name: Checkout tests repository
         uses: actions/checkout@v4
 
