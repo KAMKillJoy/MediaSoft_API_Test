@@ -17,7 +17,10 @@ Password: postgres_password
 - Установить python 3 
 - Установить зависимости из requirements.txt
 - Установить Allure CLI
-- создать в корне проекта .env файл с данными из пункта "Логины и пароли"
+- создать в корне проекта .env файл с данными из пункта "Логины и пароли": 
+
+`DB_USER=postgres_user
+DB_PASSWORD=postgres_password`
 - установить Docker
 - собрать и запустить контейнер с помощью docker-compose.yml в корне проекта (НЕ docker-compose.ci.yml)
 - Запустить run_tests.bat
