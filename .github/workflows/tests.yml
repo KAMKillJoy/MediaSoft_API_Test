@@ -67,14 +67,22 @@ jobs:
           path: allure-report
 
 
+      - name: Check if report exists
+        id: report_check
+        run: |
+          if [ -d "./allure-report" ] && [ "$(ls -A ./allure-report)" ]; then
+            echo "report_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "report_exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy to GitHub Pages
-        if: always()
+        if: always() && steps.report_check.outputs.report_exists == 'true'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./allure-report
           keep_files: false
-
 
       - name: Stop containers
         if: always()
