@@ -30,7 +30,7 @@ jobs:
           docker-compose --version
 
       - name: Run API container
-        run: docker-compose up -d
+        run: docker-compose -f docker-compose.ci.yml up -d
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -46,10 +46,7 @@ jobs:
 
       - name: Run API tests
         run: |
-          pytest tests/api_tests \
-            -n auto \
-            --count=20 \
-            --alluredir=./allure-results
+          pytest --alluredir=./allure-results
 
       - name: Install Allure CLI
         run: |
