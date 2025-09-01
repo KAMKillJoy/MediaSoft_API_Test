@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field, constr, RootModel
-from uuid import UUID
-from typing import Annotated, List, Optional
 from datetime import datetime
 from enum import Enum
+from typing import Annotated, List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field, RootModel
+
 
 class RequestCreateProductDto(BaseModel):
     name: Annotated[
@@ -22,12 +24,12 @@ class RequestCreateProductDto(BaseModel):
     qty: Annotated[int, Field(ge=1)]
 
 
-
 class Currency(str, Enum):
     USD = "USD"
     EUR = "EUR"
     CNY = "CNY"
     RUB = "RUB"
+
 
 class ResponseProductDto(BaseModel):
     name: str
@@ -39,6 +41,7 @@ class ResponseProductDto(BaseModel):
     insertedAt: datetime
     last_qty_changed: Optional[datetime] = None
     currency: Currency
+
 
 class ResponseProductsDto(RootModel[List[ResponseProductDto]]):
     pass

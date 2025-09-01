@@ -19,7 +19,7 @@ class DbMethods(PostgresClient):
         elif len(db_response) == 1:
             return True
         else:
-            warnings.warn("В таблице больше одной сущности с таким UUID. Так быть не должно", category=UserWarning)
+            warnings.warn("В таблице больше одной сущности с таким article. Так быть не должно", category=UserWarning)
             return True
 
     @allure.step("Проверка существования продукта с id: {bdid}")
@@ -37,8 +37,15 @@ class DbMethods(PostgresClient):
     def get_product_by_article(self, article):
         return self.fetch_all("SELECT * FROM product WHERE article = %s", (article,))
 
-    def get_product_by_id(self, dbid):
-        return self.fetch_all("SELECT * FROM product WHERE id = %s", (dbid,))
+    def get_product_by_id(self, product_id):
+        return self.fetch_all("SELECT * FROM product WHERE id = %s", (product_id,))
+
+    def get_order_by_id(self, order_id):
+        return self.fetch_all("SELECT * FROM \"order\" WHERE id = %s", (order_id,))
+
+    def get_ordered_product(self, order_id, product_id):
+        return self.fetch_all("SELECT * FROM ordered_product WHERE order_id = %s AND product_id = %s ",
+                              (order_id, product_id))
 
     def delete_ent(self, ent: dict):
         table = ent.get('table')
@@ -166,7 +173,7 @@ class DbMethods(PostgresClient):
         return created
 
     @allure.step("Получение клиента по login/email: {login}, {email}")
-    def get_customer_by_loginnemail(self, login, email):
+    def get_customer_by_loginnemail(self, login: str, email: str) -> list:
         sql = """
         SELECT *
         FROM customer
@@ -178,7 +185,7 @@ class DbMethods(PostgresClient):
         return self.fetch_all(sql, params)
 
     @allure.step("Получение заказа по customer_id: {customer_id} и адресу: {address}")
-    def get_order_by_customer_id_n_address(self, customer_id, address):
+    def get_order_by_customer_id_n_address(self, customer_id: str, address: str) -> list:
         sql = """
         SELECT *
         FROM "order"

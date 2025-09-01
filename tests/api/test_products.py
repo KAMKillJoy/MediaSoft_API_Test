@@ -7,6 +7,7 @@ from factories.factories import RequestCreateProductDtoFactory
 from helpers.helpers import validate_response_json
 from schemas.product_schemas import ResponseProductDto, ResponseProductsDto, RequestUpdateProductDto
 
+
 @allure.suite("Продукты")
 @allure.feature("API /products")
 class TestProducts:
@@ -208,4 +209,4 @@ class TestProducts:
 
         with (allure.step("Проверка отсутствия удалённого продукта в базе данных")):
             assert not db_methods.check_product_exists_by_id(product_for_test_id), \
-            f"Продукт с id {product_for_test_id} найден в БД"
+                f"Продукт с id {product_for_test_id} найден в БД"
