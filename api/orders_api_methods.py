@@ -17,17 +17,17 @@ class OrdersMethods(ApiClient):
     @allure.step("Получение заказа с id: {order_id}")
     def get_order(self, customer_id, order_id) -> Response:
         headers = {"customer_id": customer_id}
-        response = self.get(self.orders_endpoint + order_id, headers=headers)
+        response = self.get(self.orders_endpoint + "/" + order_id, headers=headers)
         return response
 
     @allure.step("Удаление заказа с id: {order_id}")
     def delete_order(self, customer_id, order_id) -> Response:
         headers = {"customer_id": customer_id}
-        response = self.delete(self.orders_endpoint + order_id, headers=headers)
+        response = self.delete(self.orders_endpoint + "/" + order_id, headers=headers)
         return response
 
     @allure.step("Обновление заказа с id: {order_id}")
     def patch_order(self, customer_id, order_id, data: dict) -> Response:
         headers = {"customer_id": customer_id}
-        response = self.patch(self.orders_endpoint + order_id, json=data, headers=headers)
+        response = self.patch(self.orders_endpoint + "/" + order_id, json=data, headers=headers)
         return response
