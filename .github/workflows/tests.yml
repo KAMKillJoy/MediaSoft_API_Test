@@ -68,6 +68,7 @@ jobs:
 
 
       - name: Check if report exists
+        if: always()
         id: report_check
         run: |
           if [ -d "./allure-report" ] && [ "$(ls -A ./allure-report)" ]; then
