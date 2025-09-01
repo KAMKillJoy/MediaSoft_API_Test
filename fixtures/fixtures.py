@@ -34,6 +34,8 @@ if not os.getenv("GITHUB_ACTIONS"):
 
 @pytest.fixture(scope="session")
 def db_methods():
+    assert os.getenv("DB_USER"), "DB_USER is not set"
+    assert os.getenv("DB_PASSWORD"), "DB_PASSWORD is not set"
     db = DbMethods(host=config["db"]["db_host"],
                    dbname=config["db"]["db_name"],
                    user=os.getenv("DB_USER"),
