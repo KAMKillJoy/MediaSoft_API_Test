@@ -55,14 +55,10 @@ jobs:
         run: |
           pytest --alluredir=./allure-results
 
-      - name: Install Allure CLI
-        run: |
-          sudo apt-get install -y default-jre
-          wget https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
-          tar -zxvf allure-2.27.0.tgz
-          sudo mv allure-2.27.0 /opt/allure
-          echo "/opt/allure/bin" >> $GITHUB_PATH
-
+      - name: Install Allure
+        uses: simple-elf/allure-report-action@v1.7
+        with:
+          allure_version: 2.27.0
 
       - name: Generate Allure report
         if: always()
