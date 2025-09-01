@@ -59,28 +59,33 @@ jobs:
           sudo mv allure-2.27.0 /opt/allure
           echo "/opt/allure/bin" >> $GITHUB_PATH
 
+      - name: Check allure results
+        id: check_results
+        run: |
+          if [ -d "./allure-results" ] && [ "$(ls -A ./allure-results)" ]; then
+            echo "results_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "results_exist=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Generate Allure report
-        if: always()
+        if: always() && steps.check_results.outputs.results_exist == 'true'
         run: allure generate ./allure-results --clean -o ./allure-report
 
-
       - name: Upload Allure report
+        if: always() && steps.check_results.outputs.results_exist == 'true'
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: allure-report
           path: allure-report
 
-
       - name: Deploy to GitHub Pages
-        if: always()
+        if: always() && steps.check_results.outputs.results_exist == 'true'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./allure-report
           keep_files: false
-
 
       - name: Stop containers
         if: always()
