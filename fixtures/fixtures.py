@@ -26,10 +26,10 @@ def api_orders_methods():
     return api
 
 
-dotenv_path = './.env'
-
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path)
+if not os.getenv("GITHUB_ACTIONS"):
+    dotenv_path = "./.env"
+    if os.path.exists(dotenv_path):
+        load_dotenv(dotenv_path)
 
 
 @pytest.fixture(scope="session")
