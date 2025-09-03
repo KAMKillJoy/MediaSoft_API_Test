@@ -1,0 +1,9 @@
+api:
+  base_url: "http://localhost:8080"
+  endpoints:
+    products: "/products"
+    orders: "/order"
+
+db:
+  db_name: "postgres_db"
+  db_host: "localhost"
