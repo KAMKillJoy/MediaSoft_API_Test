@@ -46,10 +46,7 @@ jobs:
 
       - name: Run API tests
         run: |
-          pytest tests/api_tests \
-            -n auto \
-            --count=20 \
-            --alluredir=./allure-results
+          pytest --alluredir=./allure-results
 
       - name: Install Allure CLI
         run: |
