@@ -7,6 +7,10 @@ on:
     types: [opened, synchronize, reopened, closed]
     branches: ["**"]
   workflow_dispatch:
+  
+env:
+  DB_USER: ${{ secrets.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
 jobs:
   test:
@@ -17,6 +21,9 @@ jobs:
       id-token: write
 
     steps:
+      - name: Debug env
+        run: env | grep DB_
+    
       - name: Checkout tests repository
         uses: actions/checkout@v4
 
@@ -28,7 +35,6 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
-
       - name: Run API container
         run: docker-compose -f docker-compose.ci.yml up -d
 
@@ -47,37 +53,29 @@ jobs:
       - name: Run API tests
         run: |
           pytest --alluredir=./allure-results
-
-      - name: Install Allure CLI
-        run: |
-          sudo apt-get install -y default-jre
-          wget https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
-          tar -zxvf allure-2.27.0.tgz
-          sudo mv allure-2.27.0 /opt/allure
-          echo "/opt/allure/bin" >> $GITHUB_PATH
-
-      - name: Check allure results
-        id: check_results
-        run: |
-          if [ -d "./allure-results" ] && [ "$(ls -A ./allure-results)" ]; then
-            echo "results_exist=true" >> $GITHUB_OUTPUT
-          else
-            echo "results_exist=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Generate Allure report
-        if: always() && steps.check_results.outputs.results_exist == 'true'
-        run: allure generate ./allure-results --clean -o ./allure-report
+      - name: Install Allure
+        if: always()
+        uses: simple-elf/allure-report-action@v1.7
 
       - name: Upload Allure report
-        if: always() && steps.check_results.outputs.results_exist == 'true'
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: allure-report
           path: allure-report
 
+
+      - name: Check if report exists
+        if: always()
+        id: report_check
+        run: |
+          if [ -d "./allure-report" ] && [ "$(ls -A ./allure-report)" ]; then
+            echo "report_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "report_exists=false" >> $GITHUB_OUTPUT
+          fi
       - name: Deploy to GitHub Pages
-        if: always() && steps.check_results.outputs.results_exist == 'true'
+        if: always() && steps.report_check.outputs.report_exists == 'true'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -86,4 +84,4 @@ jobs:
 
       - name: Stop containers
         if: always()
-        run: docker-compose -f docker-compose.ci.yml down
+        run: docker-compose down
