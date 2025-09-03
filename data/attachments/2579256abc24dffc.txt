@@ -1,3 +1,0 @@
-Error executing query: duplicate key value violates unique constraint "customer_login_key"
-DETAIL:  Key (login)=(lsmith) already exists.
-
